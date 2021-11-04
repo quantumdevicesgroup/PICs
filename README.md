@@ -1,2 +1,2 @@
 # PICs
-Container for Lukasz's chip_class gdspy + picwriter wrapper and .py .gds library
+This repo is for containing all things related to .gds generation for EBL.
