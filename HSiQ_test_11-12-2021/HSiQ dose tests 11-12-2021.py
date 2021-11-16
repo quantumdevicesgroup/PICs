@@ -16,7 +16,7 @@ chip.etch_markers([(5*mm-25*um,5*mm+25*um)],50*um, 3*um)
 chip.etch_markers([(5*mm-175*um,5*mm+175*um)],250*um, 10*um)
 
 chip.etch_markers([(6*mm-240*um,5*mm-35*um)],50*um, 3*um)
-chip.etch_markers([(6*mm-90*um,5*mm-175*um)],250*um, 10*um)
+#chip.etch_markers([(6*mm-90*um,5*mm-175*um)],250*um, 10*um)
 
 write_layer = 30
 for i in range(30):
@@ -28,4 +28,4 @@ for i in range(30):
 	#chip.etch_label((x_s+i*25*um,y_s-20*um),5*um,str(50+i*50))
 	write_layer += 1
 
-chip.build('HSiQ_dose_calib')
+chip.build('HSiQ_test_11-12-2021')
