@@ -14,10 +14,10 @@ def calculate_bragg_rads(wg_w,u_cell,ff):
 
 class Chip:
 
-	def __init__(self, x, y, field):
+	def __init__(self, x, y, field, dx=0,dy=0):
 		self.x,self.y = x,y
 		self.chip = gdspy.Cell("chip")
-		self.chip.add(gdspy.Rectangle((0,0),(x,y),layer=0,datatype=0))
+		self.chip.add(gdspy.Rectangle((0+dx,0+dy),(x+dx,y+dy),layer=0,datatype=0))
 		self.write_layer = 1
 		#for i in range(int(self.x/field)): # field size stitching from e-beam
 			#for j in range(int(self.y/field)):
