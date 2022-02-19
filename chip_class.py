@@ -124,9 +124,17 @@ class Chip:
 			tk.add(self.chip, br)
 			return s[0]+l+2*tp,s[1]
 
-	def etch_circ_bragg_ref(self,s,n,sp,h_r,v_r):
-		for i in range(n):
-			self.chip.add(gdspy.Round((s[0]+i*sp,s[1]),[h_r,v_r],tolerance=1e-4,layer=4,datatype=0))
+	def etch_circ_bragg_ref(self,s,n1,n2,sp,h_r,v_r):
+		for i in range(n2+1):
+			self.chip.add(gdspy.Round((s[0]+i*sp,s[1]),[h_r*(i+1)/(n2+1),v_r*(i+1)/(n2+1)],tolerance=1e-4,layer=3,datatype=0))
+		for i in range(n1):
+			self.chip.add(gdspy.Round((s[0]+(i+n2)*sp,s[1]),[h_r,v_r],tolerance=1e-4,layer=3,datatype=0))
+
+	def etch_circ_bragg_ref_left(self,s,n1,n2,sp,h_r,v_r):
+		for i in range(n2+1):
+			self.chip.add(gdspy.Round((s[0]-i*sp,s[1]),[h_r*(i+1)/(n2+1),v_r*(i+1)/(n2+1)],tolerance=1e-4,layer=3,datatype=0))
+		for i in range(n1):
+			self.chip.add(gdspy.Round((s[0]-(i+n2)*sp,s[1]),[h_r,v_r],tolerance=1e-4,layer=3,datatype=0))
 
 	def etch_circ_bragg_tp(self,s,n,sp,h_r,v_r):
 		for i in range(n):
