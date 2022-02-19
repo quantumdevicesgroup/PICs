@@ -114,6 +114,6 @@ for i in range(3):
 	x=x-50*um
 	x,y = chip.etch_wg([(x,y),(x-10*um,y)],130*nm)
 
-chip.bool_layer(2,3,"xor",3)
+chip.bool_layer(3,8,"xor",3)
 
 chip.build('device_5')
