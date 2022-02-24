@@ -28,7 +28,7 @@ class Chip:
 		gdspy.write_gds(name+'.gds', unit=1.0e-6, precision=1.0e-9)
 
 	def change_write_layer(self, layer):
-		self.wgt = pc.WaveguideTemplate(wg_width=self.wg_width,clad_width=self.clad_width,bend_radius=self.bend_rad,resist='-', fab='ETCH',wg_layer=layer,wg_datatype=0,clad_layer=2,clad_datatype=0)
+		self.wgt = pc.WaveguideTemplate(wg_width=self.wg_width,clad_width=self.clad_width,bend_radius=self.bend_rad,resist='-', fab='ETCH',wg_layer=layer,wg_datatype=0,clad_layer=layer+100,clad_datatype=0)
 		self.write_layer = layer
 
 	def create_wgt(self,wgw,cw,br):
@@ -126,9 +126,9 @@ class Chip:
 
 	def etch_circ_bragg_ref(self,s,n1,n2,sp,h_r,v_r):
 		for i in range(n2+1):
-			self.chip.add(gdspy.Round((s[0]+i*sp,s[1]),[h_r*(i+1)/(n2+1),v_r*(i+1)/(n2+1)],tolerance=1e-4,layer=8,datatype=0))
+			self.chip.add(gdspy.Round((s[0]+i*sp,s[1]),[h_r*(i+1)/(n2+1),v_r*(i+1)/(n2+1)],tolerance=1e-4,layer=self.write_layer+200,datatype=0))
 		for i in range(n1):
-			self.chip.add(gdspy.Round((s[0]+(i+n2)*sp,s[1]),[h_r,v_r],tolerance=1e-4,layer=8,datatype=0))
+			self.chip.add(gdspy.Round((s[0]+(i+n2)*sp,s[1]),[h_r,v_r],tolerance=1e-4,layer=self.write_layer+200,datatype=0))
 
 	def etch_circ_bragg_ref_left(self,s,n1,n2,sp,h_r,v_r):
 		for i in range(n2+1):
