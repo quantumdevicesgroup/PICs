@@ -42,6 +42,8 @@ class Chip:
 		self.deep_etch_len = d_e_l
 		self.chip.add(gdspy.Rectangle((0,0),(self.deep_etch_len,self.y),layer=5,datatype=0))
 		self.chip.add(gdspy.Rectangle((self.x-self.deep_etch_len,0),(self.x,self.y),layer=5,datatype=0))
+		#self.chip.add(gdspy.Rectangle((self.deep_etch_len,self.y-self.deep_etch_len),(self.x-self.deep_etch_len,self.y),layer=5,datatype=0))
+		#self.chip.add(gdspy.Rectangle((self.deep_etch_len,0),(self.x-self.deep_etch_len,self.deep_etch_len),layer=5,datatype=0))
 
 	def etch_wg(self,path,w=False):
 		if(w):
@@ -126,9 +128,9 @@ class Chip:
 
 	def etch_circ_bragg_ref(self,s,n1,n2,sp,h_r,v_r):
 		for i in range(n2+1):
-			self.chip.add(gdspy.Round((s[0]+i*sp,s[1]),[h_r*(i+1)/(n2+1),v_r*(i+1)/(n2+1)],tolerance=1e-4,layer=self.write_layer+200,datatype=0))
+			self.chip.add(gdspy.Round((s[0]+i*sp,s[1]),[h_r*(i+1)/(n2+1),v_r*(i+1)/(n2+1)],tolerance=1e-4,layer=8,datatype=0))
 		for i in range(n1):
-			self.chip.add(gdspy.Round((s[0]+(i+n2)*sp,s[1]),[h_r,v_r],tolerance=1e-4,layer=self.write_layer+200,datatype=0))
+			self.chip.add(gdspy.Round((s[0]+(i+n2)*sp,s[1]),[h_r,v_r],tolerance=1e-4,layer=8,datatype=0))
 
 	def etch_circ_bragg_ref_left(self,s,n1,n2,sp,h_r,v_r):
 		for i in range(n2+1):
