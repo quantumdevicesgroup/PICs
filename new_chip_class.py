@@ -72,6 +72,19 @@ class PIC:
 		self.design.remove_polygons(lambda pts, layer, datatype: layer==3)
 		self.design.remove_polygons(lambda pts, layer, datatype: layer==4)
 
+	def bragg_tp(self, path, period, taper_num, para_rad, perp_rad):
+		xm,ym = 1,0
+		if(path[0]<0): xm,ym = -1,0
+		elif(path[1]>0): xm,ym = 0,1
+		elif(path[1]<0): xm,ym = 0,-1
+		for i in range(taper_num):
+			self.design.add(gdspy.Round((self.x+xm*(i*period+period/2),self.y+ym*(i*period+period/2)),[abs(xm*para_rad+ym*perp_rad)*(i+1)/(taper_num+1), abs(xm*perp_rad+ym*para_rad)*(i+1)/(taper_num+1)],tolerance=1e-4,layer=3,datatype=0))
+		self.design.add(gdspy.Rectangle((self.x,self.y-self.width/2),(self.x + xm*taper_num*period, self.y+self.width/2),layer=4,datatype=0))
+		self.x = self.x+xm*taper_num*period
+		self.bool_layer(3,4,"xor",self.write_layer)
+		self.design.remove_polygons(lambda pts, layer, datatype: layer==3)
+		self.design.remove_polygons(lambda pts, layer, datatype: layer==4)
+
 	def ring(self, radius, gap, p=1):
 		ring = pc.Ring(self.wgt, radius, gap, port=[self.x,self.y], parity = p)
 		tk.add(self.design, ring)
@@ -90,11 +103,11 @@ class PIC:
 	def bool_layer(self,layer_1,layer_2,operation,final_layer):
 		layer1 = self.design.get_polygons(by_spec = (layer_1,0))
 		layer2 = self.design.get_polygons(by_spec = (layer_2,0))
-		print("Performing "+operation+" on layers "+str(layer_1)+" and "+str(layer_2)+"...")
-		start = time.time()
+		#print("Performing "+operation+" on layers "+str(layer_1)+" and "+str(layer_2)+"...")
+		#start = time.time()
 		layer = gdspy.boolean(layer1,layer2,operation,layer=final_layer)
-		end = time.time()
-		print("Time elapsed: "+str(end-start))
+		#end = time.time()
+		#print("Time elapsed: "+str(end-start))
 		self.design.add(layer)
 
 	def markers(self, coords, m_l, m_w):
