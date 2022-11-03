@@ -36,7 +36,10 @@ class PIC:
 
 	def build(self, name):
 		tk.build_mask(self.design, self.wgt, final_layer=3, final_datatype=0)
-		gdspy.write_gds(name+'.gds', unit=1.0e-6, precision=1.0e-9)
+		gdspy.write_gds(name+'.gds', unit=1.0e-6, precision=1e-9)
+
+	def get_position(self):
+		return self.x,self.y
 
 	def wg(self, path, origin=None, width=None):
 
@@ -59,7 +62,7 @@ class PIC:
 			self.x, self.y = self.x + path[0], self.y + path[1]
 			wg = pc.Waveguide([start] + [[self.x, self.y]], self.wgt)
 
-		if(type(path) is float or int): # if path is a single number, x
+		if((type(path) is float) or (type(path) is int)): # if path is a single number, x
 			self.x += path
 			wg = pc.Waveguide([start] + [[self.x, self.y]], self.wgt)
 
@@ -92,12 +95,57 @@ class PIC:
 		elif(path[1]<0): xm,ym = 0,-1
 		period_num = int(max(abs(path[0]),abs(path[1]))/period + 0.5)
 		for i in range(period_num):
-			self.design.add(gdspy.Round((self.x+xm*(i*period+period/2),self.y+ym*(i*period+period/2)),[abs(xm*para_rad+ym*perp_rad), abs(xm*perp_rad+ym*para_rad)],tolerance=1e-4,layer=8,datatype=0))
+			self.design.add(gdspy.Round((self.x+xm*(i*period+period/2),self.y+ym*(i*period+period/2)),[abs(xm*para_rad+ym*perp_rad), abs(xm*perp_rad+ym*para_rad)],number_of_points=50,layer=8,datatype=0))
 		self.design.add(gdspy.Rectangle((self.x,self.y-self.width/2),(self.x + path[0], self.y+self.width/2),layer=9,datatype=0))
 		self.x = self.x+path[0]
 		self.bool_layer(8,9,"xor",self.write_layer)
 		self.design.remove_polygons(lambda pts, layer, datatype: layer==8)
 		self.design.remove_polygons(lambda pts, layer, datatype: layer==9)
+
+	def bragg_tp(self, path, period, taper_num, para_rad, perp_rad):
+		xm,ym = 1,0
+		if(path[0]<0): xm,ym = -1,0
+		elif(path[1]>0): xm,ym = 0,1
+		elif(path[1]<0): xm,ym = 0,-1
+		for i in range(taper_num):
+			self.design.add(gdspy.Round((self.x+xm*(i*period+period/2),self.y+ym*(i*period+period/2)),[abs(xm*para_rad+ym*perp_rad)*(i+1)/(taper_num+1), abs(xm*perp_rad+ym*para_rad)*(i+1)/(taper_num+1)],number_of_points=50,layer=8,datatype=0))
+		self.design.add(gdspy.Rectangle((self.x-ym*self.width/2,self.y-xm*self.width/2),(self.x + xm*taper_num*period+ym*self.width/2, self.y+ ym*taper_num*period+xm*self.width/2),layer=9,datatype=0))
+		self.x = self.x+xm*taper_num*period
+		self.y = self.y+ym*taper_num*period
+		self.bool_layer(8,9,"xor",self.write_layer)
+		self.design.remove_polygons(lambda pts, layer, datatype: layer==8)
+		self.design.remove_polygons(lambda pts, layer, datatype: layer==9)
+
+	def ring(self, radius, gap, p=1):
+		ring = pc.Ring(self.wgt, radius, gap, port=[self.x,self.y], parity = p)
+		tk.add(self.design, ring)
+		self.x,self.y = ring.portlist['output']['port']
+
+	def pcc(self, direct, inverse, a_m, a_d, N_trans, N_front, N_taper, N_back, ff, sweep): 
+		xm,ym=inverse,0
+		if (direct):
+			xm,ym=0,inverse
+
+		path1=[xm*N_trans*a_m,ym*N_trans*a_m]
+		self.bragg_tp(path1,a_m,N_trans,a_m*ff/2+sweep,a_m*ff/2+sweep)
+		
+		path2=[xm*N_front*a_m,ym*N_front*a_m]
+		self.bragg(path2,a_m,0,a_m*ff/2+sweep,a_m*ff/2+sweep)
+
+		d=(a_m-a_d)*2/(N_taper+1)
+		x0=self.x
+		y0=self.y
+		for i in range(1, N_taper+1):
+			index=abs(i-(N_taper+1)/2)
+			self.design.add(gdspy.Round((self.x+xm*(a_d+index*d)/2,self.y+ym*(a_d+index*d)/2),[ff*(a_d+index*d)/2+sweep, ff*(a_d+index*d)/2+sweep],tolerance=1e-4,layer=8,datatype=0))
+			self.x= self.x+xm*(a_d+index*d)
+			self.y= self.y+ym*(a_d+index*d)
+		self.design.add(gdspy.Rectangle((x0-ym*self.width/2,y0-xm*self.width/2),(self.x+ym*self.width/2, self.y+xm*self.width/2),layer=9,datatype=0))
+		self.bool_layer(8,9,"xor",self.write_layer)
+		self.design.remove_polygons(lambda pts, layer, datatype: layer==8)
+		self.design.remove_polygons(lambda pts, layer, datatype: layer==9)
+		path3=[xm*N_back*a_m,ym*N_back*a_m]
+		self.bragg(path3,a_m,0,a_m*ff/2+sweep,a_m*ff/2+sweep)
 
 	def bool_layer(self, layer_1, layer_2, operation, final_layer, debug=False):
 		layer1 = self.design.get_polygons(by_spec = (layer_1,0))
