@@ -5,6 +5,8 @@ import gdspy, time
 import numpy as np
 from picwriter import toolkit as tk
 import picwriter.components as pc
+from transmission_line import transmission_line as tl, cpw
+
 cm,mm,um,nm = 10**4,10**3,1,10**-3
 
 class PIC:
@@ -174,17 +176,96 @@ class PIC:
 		marker_w = m_w
 		ld_markers= {"layer": 6, "datatype": 0}
 		for i in range(len(coords)):
-		    marker_x=coords[i][0]
-		    marker_y=coords[i][1]
-		    m_1=gdspy.Path(marker_w,(marker_x-marker_l/2-marker_w/2,marker_y-marker_w/2))
-		    m_1.segment(marker_l/2+marker_w/2,"+x",**ld_markers)
-		    m_2=gdspy.Path(marker_w,(marker_x-marker_w/2,marker_y-marker_l/2-marker_w/2))
-		    m_2.segment(marker_l/2+marker_w/2,"+y",**ld_markers)
-		    m12=gdspy.boolean(m_1, m_2, "or",**ld_markers)
-		    self.design.add(m12)
-		    m_1=gdspy.Path(marker_w,(marker_x+marker_l/2+marker_w/2,marker_y+marker_w/2))
-		    m_1.segment(marker_l/2+marker_w/2, "-x",**ld_markers)
-		    m_2=gdspy.Path(marker_w,(marker_x+marker_w/2,marker_y+marker_l/2+marker_w/2))
-		    m_2.segment(marker_l/2+marker_w/2,"-y",**ld_markers)
-		    m12=gdspy.boolean(m_1, m_2, "or",**ld_markers)
-		    self.design.add(m12)
+			marker_x=coords[i][0]
+			marker_y=coords[i][1]
+			m_1=gdspy.Path(marker_w,(marker_x-marker_l/2-marker_w/2,marker_y-marker_w/2))
+			m_1.segment(marker_l/2+marker_w/2,"+x",**ld_markers)
+			m_2=gdspy.Path(marker_w,(marker_x-marker_w/2,marker_y-marker_l/2-marker_w/2))
+			m_2.segment(marker_l/2+marker_w/2,"+y",**ld_markers)
+			m12=gdspy.boolean(m_1, m_2, "or",**ld_markers)
+			self.design.add(m12)
+			m_1=gdspy.Path(marker_w,(marker_x+marker_l/2+marker_w/2,marker_y+marker_w/2))
+			m_1.segment(marker_l/2+marker_w/2, "-x",**ld_markers)
+			m_2=gdspy.Path(marker_w,(marker_x+marker_w/2,marker_y+marker_l/2+marker_w/2))
+			m_2.segment(marker_l/2+marker_w/2,"-y",**ld_markers)
+			m12=gdspy.boolean(m_1, m_2, "or",**ld_markers)
+			self.design.add(m12)
+
+	def Rectangle(self, coords, layer): 
+		r = gdspy.Rectangle(coords[0], coords[1], layer=layer)
+		self.design.add(r)
+
+	def markers_protect(self, coords, layer, size): 
+		for i in range(len(coords)):
+			lb = (coords[i][0]-size*um, coords[i][1]-size*um)
+			rt = (coords[i][0]+size*um, coords[i][1]+size*um)
+			self.Rectangle([lb, rt], layer=layer)
+	
+	def get_coordinate(self, coord, n, start, stop, pair=None): #record the position of each set of wg and connect
+		if pair is None or pair%2 == 0:
+			if n%2 == 1:
+				coord.append(start)
+				coord.append(stop)
+			else:
+				coord.append(stop)
+				coord.append(start)
+		else:
+			if n%2 == 0:
+				coord.append(start)
+				coord.append(stop)
+			else:
+				coord.append(stop)
+				coord.append(start)
+	
+	def add_turn(self, coord, turn_bt, turn_tp): #smoonth the end of CPW on wg
+		bottom_port = coord[0]
+		top_port = coord[-1]
+		bottom_add = tuple([bottom_port[0]+turn_bt,bottom_port[1]])
+		top_add = tuple([top_port[0]+turn_tp,top_port[1]])
+		coord.append(top_add)
+		coord.insert(0, bottom_add)
+
+	# Positive: written in regions where metal should be deposited. 
+	# Negative: written only gap regions (where metal shouldn't be deposited)
+
+	def feedline(self, coord, trace, gap, ground, lay, radius=None, positive=True):
+		feedline_cpw = cpw.CPW(outline=coord, trace=trace, gap=gap, ground=ground, radius=None)
+		if positive:
+			feedline_cpw.draw(cell=self.design, origin=(0,0), layer=lay, draw_trace=True, draw_gap=False, draw_ground=True)
+		else:
+			feedline_cpw.draw(cell=self.design, origin=(0,0), layer=lay, draw_trace=False, draw_gap=True, draw_ground=False)
+	
+	def get_vertices(self, endpt, trace, gap, ground, radius=None):
+		coord = [(0,0), (endpt, 0)]
+		vertices = cpw.CPW(outline=coord, trace=trace, gap=gap, ground=ground, radius=None)
+		return vertices
+	
+	def get_transition_vertices(self, trace1, trace2, gap1, gap2, ground1, ground2, trans_len):
+		transition = cpw.CPWTransition(start_point=(0, 0), end_point=np.array([trans_len,0]), start_trace=trace1, end_trace=trace2, start_gap=gap1, end_gap=gap2, start_ground=ground1, end_ground=ground2)
+		return transition
+
+
+	def draw_connect_launch(self, connect, launch, border1, transition, startpt, layer, border2=None, positive=True):
+		if positive:
+			feedline = tl.SegmentList([connect, transition, launch, border1, border2])
+			feedline.draw(cell=self.design, origin=startpt, layer=layer, draw_trace=True, draw_gap=False, draw_ground=True, individual_keywords={3:dict(draw_trace=False), 4:dict(draw_gap=True)})
+		else:
+			feedline = tl.SegmentList([connect, transition, launch, border1])
+			feedline.draw(cell=self.design, origin=startpt, layer=layer, draw_trace=False, draw_gap=True, draw_ground=False, individual_keywords={3:dict(draw_trace=True, draw_gap=True)})
+
+	def connect_two_seg(self, coord1, a, coord2, b, trace, gap, ground, layer, radius=None, positive=True):
+		path = []
+		pt1 = coord1[-1]
+		pt2 = coord2[0]
+		for i in range(a):
+			addpt = tuple([pt1[0]+i*10*um, pt1[1]])
+			path.append(addpt)
+		for i in range(b):
+			addpt = tuple([pt2[0]+(b-1-i)*10*um, pt2[1]])
+			path.append(addpt)
+		line = cpw.CPW(outline=path, trace=trace, gap=gap, ground=ground, radius=None)
+		if positive:
+			line.draw(cell=self.design, origin=(0,0), layer=layer, draw_trace=True, draw_gap=False, draw_ground=True)
+		else:
+			line.draw(cell=self.design, origin=(0,0), layer=layer, draw_trace=False, draw_gap=True, draw_ground=False)
+	
