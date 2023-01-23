@@ -194,7 +194,8 @@ class PIC:
 	def Rectangle(self, coords, layer): 
 		r = gdspy.Rectangle(coords[0], coords[1], layer=layer)
 		self.design.add(r)
-
+	
+    
 	def markers_protect(self, coords, layer, size): 
 		for i in range(len(coords)):
 			lb = (coords[i][0]-size*um, coords[i][1]-size*um)
@@ -217,7 +218,7 @@ class PIC:
 				coord.append(stop)
 				coord.append(start)
 	
-	def add_turn(self, coord, turn_bt, turn_tp): #smoonth the end of CPW on wg
+	def add_pt(self, coord, turn_bt, turn_tp): #smoonth the end of CPW on wg
 		bottom_port = coord[0]
 		top_port = coord[-1]
 		bottom_add = tuple([bottom_port[0]+turn_bt,bottom_port[1]])
@@ -253,6 +254,13 @@ class PIC:
 			feedline = tl.SegmentList([connect, transition, launch, border1])
 			feedline.draw(cell=self.design, origin=startpt, layer=layer, draw_trace=False, draw_gap=True, draw_ground=False, individual_keywords={3:dict(draw_trace=True, draw_gap=True)})
 
+	def draw_transition(self, vertices, startpt, layer, positive=True):
+		if positive:
+			vertices.draw(cell=self.design, origin=startpt, layer=layer, draw_trace=True, draw_gap=False, draw_ground=True)
+		else:
+			vertices.draw(cell=self.design, origin=startpt, layer=layer, draw_trace=False, draw_gap=True, draw_ground=False)
+
+
 	def connect_two_seg(self, coord1, a, coord2, b, trace, gap, ground, layer, radius=None, positive=True):
 		path = []
 		pt1 = coord1[-1]
@@ -269,3 +277,35 @@ class PIC:
 		else:
 			line.draw(cell=self.design, origin=(0,0), layer=layer, draw_trace=False, draw_gap=True, draw_ground=False)
 	
+	def micropucks(self, start, radius, layer, repeat, interval=None):
+		if (type(radius) is int):
+			r = gdspy.Round(start, radius, tolerance=1E-4, layer=layer)
+			self.design.add(r)
+			if (repeat > 1):
+				for j in range(repeat - 1):
+					#start[0] += radius + interval + radius
+					start[0] += interval
+					r = gdspy.Round(start, radius, tolerance=1E-4, layer=layer)
+					self.design.add(r)
+		else:
+			for i in range (len(radius)):
+				if i == 0:
+					r = gdspy.Round(start, radius[i], tolerance=1E-4, layer=layer)
+					self.design.add(r)
+					if (repeat > 1):
+						for j in range (repeat - 1):
+							#start[0] += radius[0] + interval + radius[0]
+							start[0] += interval
+							r = gdspy.Round(start, radius[i], tolerance=1E-4, layer=layer)
+							self.design.add(r)
+				else:
+					#start[0] += radius[i-1] + interval + radius[i]
+					start[0] += 2*interval
+					r = gdspy.Round(start, radius[i], tolerance=1E-4, layer=layer)
+					self.design.add(r)
+					if (repeat > 1):
+						for j in range (repeat - 1):
+							#start [0] += radius[i] + interval + radius[i]
+							start [0] += interval
+							r = gdspy.Round(start, radius[i], tolerance=1E-4, layer=layer)
+							self.design.add(r)
