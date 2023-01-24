@@ -3,7 +3,7 @@ from PIC_class import *
 cm,mm,um,nm = 10**4,10**3,1,10**-3
 name = os.path.basename(__file__[:-3])
 
-PIC = PIC(1*cm, 1*cm, (0.5*cm, 0.5*cm))
+PIC = PIC(1*cm, 1*cm, (0*cm, 0*cm))
 PIC.edge_mask(3*mm,3*mm,0,0)
 PIC.markers([(3.5*mm,6.5*mm),(3.5*mm,3.5*mm),(6.5*mm,3.5*mm)],200*um, 10*um)
 
