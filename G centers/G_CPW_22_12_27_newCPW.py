@@ -13,7 +13,7 @@ wg_len = 300*um
 wg_extra = 120*um
 x_extra = 2*um
 y_sep_i = 100*um 
-y_sep_j = 30*um
+y_sep_j = 31*um
 feedline_extra = 50*um
 
 
@@ -62,7 +62,7 @@ for i in range(2):
         PIC.set_write_layer(30+i*2+(j+1))
         PIC.x, PIC.y = 2.5*mm+x_extra,4.1*mm+i*y_sep_i+j*y_sep_j
         PIC.tp(50*um,130*nm,300*nm)
-        PIC.wg(wg_extra+50*um) #put all PCC region under CPW
+        PIC.wg(wg_extra+100*um) #put all PCC region under CPW
         PIC.pcc(0,1,(295)*nm,(245)*nm,4,7,7,15,0.64,(i-1)*10.0*nm)
     start = tuple([2.5*mm+x_extra+50*um+wg_extra, 4.1*mm+i*y_sep_i+j*y_sep_j/2])
     stop = tuple([PIC.x+feedline_extra, 4.1*mm+i*y_sep_i+j*y_sep_j/2])
@@ -70,7 +70,7 @@ for i in range(2):
 
 
 # 14 diagonal waveguides
-y_sep_j = 30*np.sqrt(2)*um
+y_sep_j = 31*np.sqrt(2)*um
 coord2 = []
 for i in range(9):
 	for j in range(2):
@@ -87,20 +87,37 @@ for i in range(9):
 	PIC.get_coordinate(coord2, i, start, stop, 7)
 
 
-### CPW on top of wg ###
+### CPW ###
 feedline_trace = 25*um
-feedline_gap = 5*um
+feedline_gap = 6*um
 feedline_ground = 100*um
+
+
+### CPW on ring resonator ###
+ring_gap = 16*um
+ring_trace = 15*um
+ring_ground = 100*um
+shrink_len = 50*um
+PIC.feedline(coord3, ring_trace, ring_gap, ring_ground, 98, 30, positive=False)
+shrink = PIC.get_transition_vertices(ring_trace, feedline_trace, ring_gap, feedline_gap, ring_ground, feedline_ground, shrink_len)
+PIC.draw_transition(shrink, coord3[0], 98, positive=False)
+PIC.draw_transition(shrink, coord3[-1], 98, positive=False )
+PIC.add_pt(coord3, shrink_len, shrink_len)
+
+### CPW on top of wg ###
 turn = 20*um
 turnn = -20*um
 
-PIC.add_turn(coord1, 1*turn, 2*turnn)
-PIC.add_turn(coord2, 2*turnn-10*um, turn)
-PIC.add_turn(coord4, coord3[-1][0]-coord4[0][0]+turn, coord1[0][0]-coord4[-1][0])
-PIC.add_turn(coord3, 0, turn)
+PIC.add_pt(coord1, 1*turn, 2*turnn)
+PIC.add_pt(coord2, 2*turnn-10*um, turn)
+connect_path = [coord3[-2], coord3[-1]]
+PIC.add_pt(connect_path, 0, turn)
+PIC.add_pt(connect_path, 0, turn)
+PIC.add_pt(coord4, connect_path[-1][0]-coord4[0][0], coord1[0][0]-coord4[-1][0])
+
 
 coord_path = []
-coord_path.extend(coord3)
+coord_path.extend(connect_path)
 coord_path.extend(coord4)
 coord_path.extend(coord1)
 coord_path.extend(coord2)
@@ -112,24 +129,43 @@ launch_trace = 390*um
 launch_gap = 112*um
 launch_ground = 800*um
 launch_border1 = 100*um
-launch_length = 450*um
+launch_length = 600*um
 transition_length = 300*um
-connect_len1 = 8.1*mm - coord_path[0][0]
-connect_len2 = 8.1*mm - coord_path[-1][0]
+connect_len1 = 8.15*mm - coord_path[0][0]
+connect_len2 = 8.15*mm - coord3[0][0]
 
 connect1 = PIC.get_vertices(connect_len1, feedline_trace, feedline_gap, feedline_ground, 10)
 launch = PIC.get_vertices(launch_length, launch_trace, launch_gap, launch_ground)
 border1 = PIC.get_vertices(launch_border1, launch_trace, launch_gap, launch_ground)
 transition = PIC.get_transition_vertices(feedline_trace, launch_trace, feedline_gap, launch_gap, feedline_ground, launch_ground, transition_length)
 
-PIC.draw_connect_launch(connect1, launch, border1, transition, coord_path[0], 98, positive=False)
+PIC.draw_connect_launch(connect1, launch, border1, transition, coord3[0], 98, positive=False)
 
 connect2 = PIC.get_vertices(connect_len2, feedline_trace, feedline_gap, feedline_ground, 10)
 PIC.draw_connect_launch(connect2, launch, border1, transition, coord_path[-1], 98, positive=False)
 
 ### Inverse design ###
-PIC.Rectangle([(2.5*mm+x_extra+50*um+10*um, 3.2*mm), (9.8*mm, 6.8*mm)],99)
-PIC.bool_layer(98, 99, "xor", 100)       
+PIC.Rectangle([(2.5*mm+x_extra+50*um+10*um, 3.1*mm), (9.7*mm, 6.9*mm)],99)
+PIC.Rectangle([(7.5*mm, 2*mm), (9.7*mm, 8*mm)],99)
+PIC.bool_layer(98, 99, "xor", 100) 
+#PIC.Rectangle([(2.5*mm+x_extra+50*um+10*um, 3.1*mm), (2.5*mm+0.5*mm, 3.4*mm)],96)   
+#PIC.Rectangle([(2.5*mm+x_extra+50*um+10*um, 6.6*mm), (2.5*mm+0.5*mm, 6.9*mm)],96) 
+#PIC.bool_layer(96, 97, "xor", 100) 
+
+### Nb marker ###
+for i in range (3):
+    PIC.micropucks(([2.5*mm+3*um, 3.25*mm-i*5*um]), 1*um, 100, 2, 5*um)
+    PIC.micropucks(([2.5*mm+3*um, 6.8*mm+i*5*um]), 1*um, 100, 2, 5*um)
+
+### micropuck ###
+# radius_sel = [300*nm, 305*nm, 520*nm, 527*nm, 754*nm, 812*nm]
+# radius_sweep = []
+# for i in range (6):
+#     radius_sweep= np.arange(250+i*100, 250+(i+1)*100, 10)
+#     PIC.micropucks(([2.5*mm+50*um, 3.25*mm-i*6*um]), radius_sweep*nm, 91, 5, 5*um)
+#     PIC.micropucks(([2.5*mm+50*um, 6.8*mm+i*6*um]), radius_sweep*nm, 91, 5, 5*um)
+# PIC.micropucks(([2.5*mm+50*um, 3.25*mm-50*um]), radius_sel, 91, 10, 5*um)
+# PIC.micropucks(([2.5*mm+50*um, 6.8*mm+50*um]), radius_sel, 91, 10, 5*um)
 
 
 
