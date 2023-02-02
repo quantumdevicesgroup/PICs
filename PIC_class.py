@@ -161,14 +161,14 @@ class PIC:
 			print("Time elapsed: "+str(end-start))
 		self.design.add(layer)
 
-	def edge_mask(self, left, right, top, bottom):
-		r_1 = gdspy.Rectangle((0,0),(left,self.y_domain),layer=5,datatype=0)
-		r_2 = gdspy.Rectangle((self.x_domain-right,0),(self.x_domain,self.y_domain),layer=5,datatype=0)
-		r_11 = gdspy.boolean(r_1, r_2, "or", layer=5)
-		r_1 = gdspy.Rectangle((left,self.y_domain-top),(self.x_domain-right,self.y_domain),layer=5,datatype=0)
-		r_2 = gdspy.Rectangle((left,bottom),(self.x_domain-right,0),layer=5,datatype=0)
-		r_22 = gdspy.boolean(r_1, r_2, "or", layer=5)
-		r = gdspy.boolean(r_11, r_22, "or", layer=5)
+	def edge_mask(self, left, right, top, bottom, layer=5):
+		r_1 = gdspy.Rectangle((0,0),(left,self.y_domain),layer=layer,datatype=0)
+		r_2 = gdspy.Rectangle((self.x_domain-right,0),(self.x_domain,self.y_domain),layer=layer,datatype=0)
+		r_11 = gdspy.boolean(r_1, r_2, "or", layer=layer)
+		r_1 = gdspy.Rectangle((left,self.y_domain-top),(self.x_domain-right,self.y_domain),layer=layer,datatype=0)
+		r_2 = gdspy.Rectangle((left,bottom),(self.x_domain-right,0),layer=layer,datatype=0)
+		r_22 = gdspy.boolean(r_1, r_2, "or", layer=layer)
+		r = gdspy.boolean(r_11, r_22, "or", layer=layer)
 		self.design.add(r)
 
 	def markers(self, coords, m_l, m_w):
@@ -194,8 +194,16 @@ class PIC:
 	def Rectangle(self, coords, layer): 
 		r = gdspy.Rectangle(coords[0], coords[1], layer=layer)
 		self.design.add(r)
+<<<<<<< Updated upstream
 	
     
+=======
+
+	def Circle(self, coords, radius, layer, tolerance=0.01): 
+		r = gdspy.Round(coords, radius, layer=layer, tolerance=tolerance)
+		self.design.add(r)
+
+>>>>>>> Stashed changes
 	def markers_protect(self, coords, layer, size): 
 		for i in range(len(coords)):
 			lb = (coords[i][0]-size*um, coords[i][1]-size*um)
