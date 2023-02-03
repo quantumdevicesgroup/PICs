@@ -194,16 +194,11 @@ class PIC:
 	def Rectangle(self, coords, layer): 
 		r = gdspy.Rectangle(coords[0], coords[1], layer=layer)
 		self.design.add(r)
-<<<<<<< Updated upstream
-	
-    
-=======
 
 	def Circle(self, coords, radius, layer, tolerance=0.01): 
 		r = gdspy.Round(coords, radius, layer=layer, tolerance=tolerance)
 		self.design.add(r)
 
->>>>>>> Stashed changes
 	def markers_protect(self, coords, layer, size): 
 		for i in range(len(coords)):
 			lb = (coords[i][0]-size*um, coords[i][1]-size*um)
