@@ -1,4 +1,5 @@
 import sys, os
+sys.path.append("..")
 from PIC_class import *
 from transmission_line import transmission_line as tl, cpw
 cm,mm,um,nm = 10**4,10**3,1,10**-3
