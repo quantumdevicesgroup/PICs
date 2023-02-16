@@ -83,7 +83,8 @@ class PIC:
 			elif(path[1] < 0): direction = 'SOUTH'
 			tp = pc.Taper(self.wgt, max(abs(path[0]),abs(path[1])), port=(self.x, self.y), start_width = w1, end_width = w2, direction = direction)
 
-		if(type(path) is float or int): # if path is a single number, x
+		if(type(path) is float or type(path) is int): # if path is a single number, x
+		# if (isinstance(path, (float, int))):
 			if(path < 0): direction = 'WEST'
 			tp = pc.Taper(self.wgt, abs(path), port=(self.x, self.y), start_width = w1, end_width = w2, direction = direction)
 
